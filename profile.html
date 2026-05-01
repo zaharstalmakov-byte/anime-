@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} · ANIMEFLOW{% endblock %}
+
+{% block content %}
+  <div class="rounded-2xl bg-gradient-to-br from-surface to-surface2 border border-white/5 p-6 mb-8 flex items-center gap-5">
+    <div class="w-20 h-20 rounded-2xl bg-accent grid place-items-center text-white text-3xl font-black shadow-glow uppercase">
+      {{ user.username[0] }}
+    </div>
+    <div class="flex-1">
+      <h1 class="text-2xl font-extrabold">{{ user.username }}</h1>
+      <p class="text-sm text-gray-400">{{ user.email }}</p>
+      <p class="text-xs text-gray-500 mt-1">Роль: {{ user.role }}</p>
+    </div>
+    <a href="/logout" class="px-4 py-2 rounded-xl bg-surface border border-white/5 hover:border-red-500/50 hover:text-red-300 text-sm transition">Выйти</a>
+  </div>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+      <span class="text-accent">♥</span> Избранное
+    </h2>
+    {% if favorites %}
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {% for a in favorites %}
+          {% include "partials/anime_card.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border border-white/5 bg-surface p-8 text-center text-gray-400 text-sm">
+        Пока нет избранного. Откройте любое аниме и нажмите ♥, чтобы добавить.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

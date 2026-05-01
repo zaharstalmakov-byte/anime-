@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Нет соединения · ANIMEFLOW</title>
+  <meta name="theme-color" content="#0f1116" />
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 30% 20%, #1c2030 0%, #0f1116 60%);
+      color: #f3f4f6;
+      display: grid; place-items: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 460px; width: 100%; text-align: center;
+      background: rgba(22, 25, 33, 0.85);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      backdrop-filter: blur(12px);
+      border-radius: 24px; padding: 40px 28px;
+      box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+    }
+    .ico {
+      width: 72px; height: 72px; margin: 0 auto 18px;
+      border-radius: 50%; display: grid; place-items: center;
+      background: rgba(139, 92, 246, 0.12);
+      color: #a78bfa;
+    }
+    .ico svg { width: 36px; height: 36px; }
+    h1 { font-size: 22px; font-weight: 800; margin: 0 0 8px; }
+    p { font-size: 14px; color: #9ca3af; line-height: 1.55; margin: 0 0 24px; }
+    .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    button, a.btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 20px; border-radius: 14px; font-size: 14px; font-weight: 600;
+      border: 0; cursor: pointer; text-decoration: none;
+      transition: filter 0.18s ease, transform 0.18s ease;
+    }
+    button:hover, a.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .primary { background: #8b5cf6; color: #fff; }
+    .ghost { background: rgba(255,255,255,0.06); color: #d1d5db; border: 1px solid rgba(255,255,255,0.08); }
+    .status {
+      margin-top: 22px; font-size: 12px; color: #6b7280;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+    .dot.online { background: #10b981; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 1l22 22"/>
+        <path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/>
+        <path d="M5 12.55a10.94 10.94 0 015.17-2.39"/>
+        <path d="M10.71 5.05A16 16 0 0122.58 9"/>
+        <path d="M1.42 9a15.91 15.91 0 014.7-2.88"/>
+        <path d="M8.53 16.11a6 6 0 016.95 0"/>
+        <line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+    </div>
+    <h1>Нет соединения</h1>
+    <p>Похоже, интернет пропал. Проверьте подключение и попробуйте снова — кэшированные страницы по-прежнему доступны.</p>
+    <div class="actions">
+      <button type="button" class="primary" onclick="location.reload()">Повторить</button>
+      <a href="/" class="btn ghost">На главную</a>
+    </div>
+    <div class="status"><span id="dot" class="dot"></span><span id="state">Оффлайн</span></div>
+  </div>
+  <script>
+    function refresh() {
+      var dot = document.getElementById('dot');
+      var st = document.getElementById('state');
+      if (navigator.onLine) {
+        dot.classList.add('online'); st.textContent = 'Соединение восстановлено';
+        setTimeout(function () { location.reload(); }, 800);
+      } else {
+        dot.classList.remove('online'); st.textContent = 'Оффлайн';
+      }
+    }
+    window.addEventListener('online', refresh);
+    window.addEventListener('offline', refresh);
+    refresh();
+  </script>
+</body>
+</html>

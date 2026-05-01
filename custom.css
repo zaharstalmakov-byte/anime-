@@ -1,0 +1,201 @@
+/* Custom Plyr theme tweaks */
+:root {
+  --plyr-color-main: #8b5cf6;
+  --plyr-video-control-color: #fff;
+  --plyr-video-control-color-hover: #fff;
+  --plyr-menu-background: rgba(22,25,33,0.95);
+  --plyr-menu-color: #f3f4f6;
+}
+
+.plyr {
+  border-radius: 1rem;
+}
+
+/* Line clamp utility (some Tailwind builds lack it) */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Card hover glow */
+.anime-card {
+  will-change: transform;
+}
+
+/* Hide scrollbar in dropdown */
+#search-results::-webkit-scrollbar { width: 6px; }
+#search-results::-webkit-scrollbar-thumb { background: #2a2f44; border-radius: 999px; }
+
+/* Inputs autofill fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f3f4f6;
+  -webkit-box-shadow: 0 0 0px 1000px #1c2030 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Episode bricks — uniform CSS-grid tiles with centred numbers */
+.episode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 10px;
+}
+/* Long shows (>50 эп.) get an internal scroll so the grid never explodes */
+.episode-grid-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #1c2030;
+}
+.episode-grid-scroll::-webkit-scrollbar { width: 8px; }
+.episode-grid-scroll::-webkit-scrollbar-track { background: #1c2030; border-radius: 6px; }
+.episode-grid-scroll::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 6px; }
+.episode-brick {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  min-height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1c2030 0%, #161826 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d1d5db;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+              box-shadow 0.18s ease, background 0.18s ease;
+  overflow: hidden;
+  user-select: none;
+}
+.episode-brick::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.18), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+.episode-brick:hover {
+  transform: translateY(-2px);
+  border-color: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 8px 22px -10px rgba(139, 92, 246, 0.55);
+}
+.episode-brick:hover::before { opacity: 1; }
+.episode-brick:active { transform: translateY(0); }
+.episode-brick.is-active {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.35), 0 8px 22px -8px rgba(139, 92, 246, 0.65);
+}
+.episode-num {
+  display: block;
+  text-align: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Watched + progress markers on episode bricks */
+.episode-progress {
+  position: absolute;
+  left: 6px; right: 6px; bottom: 6px;
+  height: 3px;
+  background: rgba(139, 92, 246, 0.85);
+  border-radius: 3px;
+  transform-origin: left center;
+  transform: scaleX(0);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.18s ease;
+  pointer-events: none;
+}
+.episode-brick.is-active .episode-progress { background: rgba(255,255,255,0.85); }
+.episode-brick[data-progress] .episode-progress { opacity: 1; }
+.episode-watched-mark {
+  position: absolute;
+  top: 4px; right: 5px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  color: #10b981;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+.episode-brick.is-watched .episode-watched-mark {
+  opacity: 1; transform: scale(1);
+}
+.episode-brick.is-watched {
+  color: #9ca3af;
+  background: linear-gradient(135deg, #181b27 0%, #14171f 100%);
+}
+.episode-brick.is-watched:not(.is-active) {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Resume popup fade in */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+  transition: opacity 0.3s ease;
+}
+
+/* ========== Branding: logo & banner ========== */
+.logo {
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+
+.banner {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -15px rgba(139, 92, 246, .35);
+  border: 1px solid rgba(255,255,255,.05);
+}
+.banner img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+.banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,17,22,0) 55%, rgba(15,17,22,.6) 100%);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .banner img { height: 180px; }
+  .logo { height: 32px; }
+}
+
+/* ---- Page fade-in transition (subtle, used on main content blocks) ---- */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-fade-in {
+  animation: pageFadeIn .28s ease-out both;
+}
+.page-fade-in-slow {
+  animation: pageFadeIn .45s ease-out both;
+}
+/* Respect reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in, .page-fade-in-slow { animation: none; }
+}

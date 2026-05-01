@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ANIMEFLOW · смотри аниме онлайн без рекламы{% endblock %}</title>
+
+  <meta name="description" content="{% block meta_description %}ANIMEFLOW — каталог аниме онлайн: тысячи серий, удобный плеер, без рекламы. Смотри в любом качестве на телефоне и компьютере.{% endblock %}" />
+  <meta name="theme-color" content="#0f1116" />
+  <meta name="application-name" content="ANIMEFLOW" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ANIMEFLOW" />
+
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+  <meta property="og:site_name" content="ANIMEFLOW" />
+  <meta property="og:title" content="{% block og_title %}ANIMEFLOW · смотри аниме онлайн без рекламы{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Каталог аниме онлайн: тысячи серий, удобный плеер, без рекламы.{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}/static/img/og-cover.svg{% endblock %}" />
+  <meta property="og:url" content="{{ request.url._url if request and request.url else '/' }}" />
+  <meta property="og:locale" content="ru_RU" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ self.og_title() }}" />
+  <meta name="twitter:description" content="{{ self.og_description() }}" />
+  <meta name="twitter:image" content="{{ self.og_image() }}" />
+
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg" />
+  <link rel="apple-touch-icon" href="/static/img/icon-192.svg" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0f1116',
+            surface: '#161921',
+            surface2: '#1c2030',
+            accent: '#8b5cf6',
+            accentSoft: '#a78bfa',
+          },
+          borderRadius: { '2xl': '1rem' },
+          boxShadow: {
+            glow: '0 0 24px 0 rgba(139,92,246,0.45)',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <link rel="stylesheet" href="/static/css/custom.css" />
+</head>
+<body class="bg-bg text-gray-100 min-h-screen font-[Inter] antialiased">
+  {% include "partials/header.html" %}
+
+  <!-- Ad banner container (admin-controlled global dynamic content) -->
+  <div id="ad-banner" class="max-w-7xl mx-auto px-4 sm:px-6 mt-4">
+    {% if request.state.ad_content %}
+      <div class="rounded-2xl border border-white/5 bg-surface p-4">
+        {{ request.state.ad_content|safe }}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border border-white/5 bg-gradient-to-r from-surface to-surface2 p-4 text-sm text-gray-400 flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+          Здесь может быть ваш баннер · место для динамического промо-блока
+        </span>
+        <span class="hidden sm:inline text-xs text-gray-500">advertising slot</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 page-fade-in">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-white/5 mt-12 py-8 text-center text-xs text-gray-500">
+    ANIMEFLOW · смотри аниме онлайн · {{ now_year }}
+  </footer>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-40 hidden" onclick="closeMobile()"></div>
+  <aside id="mobile-sidebar" class="fixed top-0 right-0 h-full w-72 bg-surface z-50 transform translate-x-full transition-transform duration-300 border-l border-white/5 p-6">
+    <div class="flex items-center justify-between mb-8">
+      <span class="text-lg font-bold text-accent">ANIMEFLOW</span>
+      <button onclick="closeMobile()" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+    </div>
+    <nav class="flex flex-col gap-1 text-base">
+      <a href="/" class="px-3 py-3 rounded-xl hover:bg-white/5">Главная</a>
+      <a href="/catalog" class="px-3 py-3 rounded-xl hover:bg-white/5">Каталог по жанрам</a>
+      <a href="/random" class="px-3 py-3 rounded-xl hover:bg-white/5">Случайное аниме</a>
+      {% if user %}
+        <a href="/profile" class="px-3 py-3 rounded-xl hover:bg-white/5">Профиль</a>
+        <a href="/logout" class="px-3 py-3 rounded-xl hover:bg-white/5 text-red-300">Выйти</a>
+      {% else %}
+        <a href="/login" class="px-3 py-3 rounded-xl hover:bg-white/5">Войти</a>
+        <a href="/register" class="px-3 py-3 rounded-xl bg-accent hover:bg-accentSoft text-white">Регистрация</a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <button id="scroll-top"
+          aria-label="Наверх"
+          class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-accent text-white shadow-glow hover:bg-accentSoft opacity-0 pointer-events-none translate-y-3 transition-all duration-300 grid place-items-center">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+  </button>
+
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script>
+    (function () {
+      var btn = document.getElementById('scroll-top');
+      if (!btn) return;
+      function onScroll() {
+        if (window.scrollY > 400) {
+          btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+        } else {
+          btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      btn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      onScroll();
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/static/sw.js').catch(function () {});
+        });
+      }
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

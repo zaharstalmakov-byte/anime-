@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}Админка · ANIMEFLOW{% endblock %}
+
+{% block content %}
+  {% if forbidden %}
+    <div class="rounded-2xl bg-surface border border-red-500/40 p-8 max-w-2xl mx-auto text-center">
+      <div class="text-5xl mb-3">🚫</div>
+      <h1 class="text-xl font-extrabold mb-2">Доступ запрещён</h1>
+      <p class="text-sm text-gray-400">Эта страница доступна только администраторам.</p>
+    </div>
+  {% else %}
+    <div class="space-y-6">
+      <div class="rounded-2xl bg-gradient-to-br from-surface to-surface2 border border-white/5 p-6">
+        <h1 class="text-2xl font-extrabold">Админ-панель</h1>
+        <p class="text-sm text-gray-400 mt-1">Управление баннером, парсером Shikimori и модерация отзывов.</p>
+      </div>
+
+      <!-- Ad management -->
+      <section class="rounded-2xl bg-surface border border-white/5 p-6">
+        <h2 class="font-bold mb-1">Глобальный баннер</h2>
+        <p class="text-xs text-gray-500 mb-4">HTML или текст для блока рекламы. Применяется на всех страницах.</p>
+        <form method="post" action="/admin/ad" class="space-y-3">
+          <textarea name="ad_content" rows="4"
+                    placeholder='&lt;a href="https://example.com"&gt;Ваш баннер&lt;/a&gt;'
+                    class="w-full bg-surface2 border border-white/5 focus:border-accent focus:ring-2 focus:ring-accent/30 rounded-xl px-4 py-3 text-sm outline-none font-mono resize-y">{{ ad_content }}</textarea>
+          <div class="flex items-center gap-2">
+            <button class="px-5 py-2 rounded-xl bg-accent hover:bg-accentSoft text-sm font-semibold shadow-glow transition">
+              Сохранить баннер
+            </button>
+            {% if ad_content %}
+              <span class="text-xs text-gray-500">сейчас: {{ ad_content|length }} символов</span>
+            {% endif %}
+          </div>
+        </form>
+      </section>
+
+      <!-- Parser -->
+      <section class="rounded-2xl bg-surface border border-white/5 p-6">
+        <div class="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <h2 class="font-bold">Парсер Shikimori (ТОП-100)</h2>
+            <p class="text-xs text-gray-500 mt-1">
+              Загружает ТОП-100 аниме и ищет видео в Anilibria + зеркалах.
+              После завершения каждые 30 минут проверяет новые серии.
+            </p>
+          </div>
+          <span id="parser-auto-pill"
+                class="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide
+                       {% if parser_state.auto_update %}bg-accent/20 text-accent{% else %}bg-surface2 text-gray-500{% endif %}">
+            Авто-обновление: <span id="parser-auto-text">{{ 'вкл' if parser_state.auto_update else 'выкл' }}</span>
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 mt-4 mb-4">
+          <button id="parser-run-btn"
+                  class="px-5 py-2 rounded-xl bg-accent hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-glow transition">
+            ▶ Запустить парсер
+          </button>
+          <button id="parser-stop-btn"
+                  class="px-5 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition">
+            ■ Остановить
+          </button>
+          <span class="text-xs text-gray-400">
+            Статус:
+            <span id="parser-status-pill"
+                  class="ml-1 px-2 py-0.5 rounded-md font-mono uppercase tracking-wide
+                         bg-surface2 text-gray-300 text-[11px]">{{ parser_state.status }}</span>
+          </span>
+          <span id="parser-ws-state" class="text-[11px] text-gray-500 ml-auto"></span>
+        </div>
+
+        <!-- Progress bar + counter -->
+        <div class="rounded-xl bg-surface2 border border-white/5 p-4">
+          <div class="flex items-center justify-between mb-2 text-xs">
+            <span id="parser-message" class="text-gray-300 truncate pr-3">{{ parser_state.message or '—' }}</span>
+            <span class="text-accent font-mono shrink-0">
+              <span id="parser-counter">
+                Обработано {{ parser_state.processed or 0 }} из {{ parser_state.total or 0 }}
+              </span>
+              · <span id="parser-percent">{{ parser_state.progress or 0 }}%</span>
+            </span>
+          </div>
+          <div class="h-2 rounded-full bg-bg overflow-hidden">
+            <div id="parser-bar" class="h-full bg-accent transition-all duration-500" style="width: {{ parser_state.progress }}%"></div>
+          </div>
+        </div>
+
+        <!-- Live log box -->
+        <div class="mt-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold">Лог парсера</h3>
+            <button id="parser-log-clear"
+                    class="text-[11px] text-gray-500 hover:text-white">Очистить</button>
+          </div>
+          <div id="parser-log"
+               class="h-64 overflow-y-auto rounded-xl bg-black/40 border border-white/5 px-3 py-2 font-mono text-[11.5px] leading-5 text-gray-300 whitespace-pre-wrap">
+            {% for entry in parser_state.logs %}<div data-id="{{ entry.id }}"><span class="text-gray-500">[{{ entry.ts }}]</span> <span class="{% if entry.level == 'WARN' %}text-yellow-400{% elif entry.level == 'ERROR' %}text-red-400{% else %}text-accent{% endif %} font-semibold">[{{ entry.level }}]</span> {{ entry.message }}</div>{% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <!-- Reviews moderation -->
+      <section class="rounded-2xl bg-surface border border-white/5 p-6">
+        <h2 class="font-bold mb-1">Отзывы (модерация)</h2>
+        <p class="text-xs text-gray-500 mb-4">Последние 20. Удалить любой можно одним кликом.</p>
+
+        {% if reviews %}
+          <ul class="space-y-2">
+            {% for r in reviews %}
+              <li class="flex items-start gap-3 p-3 rounded-xl bg-surface2 border border-white/5">
+                <span class="w-9 h-9 rounded-full bg-accent/20 grid place-items-center text-accent font-bold uppercase shrink-0">
+                  {{ r.user.username[0] }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 text-xs text-gray-400">
+                    <span class="font-semibold text-gray-200">{{ r.user.username }}</span>
+                    <span>·</span>
+                    <a href="/anime/{{ r.anime.id }}#reviews" class="hover:text-accent">{{ r.anime.title }}</a>
+                    <span>·</span>
+                    <span>{{ r.timestamp.strftime('%d.%m.%Y %H:%M') }}</span>
+                    {% if r.rating %}<span class="ml-auto text-yellow-400 font-semibold">★ {{ '%.1f'|format(r.rating) }}</span>{% endif %}
+                  </div>
+                  <p class="text-sm text-gray-200 mt-1 break-words">{{ r.text }}</p>
+                </div>
+                <form action="/admin/review/{{ r.id }}/delete" method="post">
+                  <button class="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 text-xs transition">
+                    Удалить
+                  </button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-gray-500">Отзывов ещё нет.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        var runBtn = document.getElementById('parser-run-btn');
+        var stopBtn = document.getElementById('parser-stop-btn');
+        var statusPill = document.getElementById('parser-status-pill');
+        var msgEl = document.getElementById('parser-message');
+        var pctEl = document.getElementById('parser-percent');
+        var counterEl = document.getElementById('parser-counter');
+        var barEl = document.getElementById('parser-bar');
+        var logEl = document.getElementById('parser-log');
+        var wsStateEl = document.getElementById('parser-ws-state');
+        var autoPill = document.getElementById('parser-auto-pill');
+        var autoText = document.getElementById('parser-auto-text');
+        var clearBtn = document.getElementById('parser-log-clear');
+
+        var lastLogId = 0;
+        // Initialize lastLogId from server-rendered DOM
+        Array.prototype.forEach.call(logEl.querySelectorAll('[data-id]'), function (el) {
+          var id = parseInt(el.dataset.id, 10) || 0;
+          if (id > lastLogId) lastLogId = id;
+        });
+
+        function statusClass(status) {
+          var map = {
+            running: 'bg-accent/20 text-accent',
+            done:    'bg-emerald-500/15 text-emerald-300',
+            error:   'bg-red-500/15 text-red-300',
+            stopped: 'bg-yellow-500/15 text-yellow-300',
+            idle:    'bg-surface2 text-gray-300'
+          };
+          return 'ml-1 px-2 py-0.5 rounded-md font-mono uppercase tracking-wide text-[11px] ' + (map[status] || map.idle);
+        }
+
+        function renderLogs(logs) {
+          if (!logs || !logs.length) return;
+          var frag = document.createDocumentFragment();
+          for (var i = 0; i < logs.length; i++) {
+            var e = logs[i];
+            if (e.id <= lastLogId) continue;
+            lastLogId = e.id;
+            var lineCls = e.level === 'WARN' ? 'text-yellow-400'
+                        : e.level === 'ERROR' ? 'text-red-400'
+                        : 'text-accent';
+            var div = document.createElement('div');
+            div.dataset.id = e.id;
+            div.innerHTML =
+              '<span class="text-gray-500">[' + e.ts + ']</span> ' +
+              '<span class="' + lineCls + ' font-semibold">[' + e.level + ']</span> ' +
+              escapeHtml(e.message);
+            frag.appendChild(div);
+          }
+          logEl.appendChild(frag);
+          // Cap to ~400 lines for memory
+          while (logEl.childElementCount > 400) {
+            logEl.removeChild(logEl.firstChild);
+          }
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function escapeHtml(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+          });
+        }
+
+        function applyState(s) {
+          if (!s || s.heartbeat) return;
+          if (typeof s.status === 'string') {
+            statusPill.textContent = s.status;
+            statusPill.className = statusClass(s.status);
+            runBtn.disabled = (s.status === 'running');
+            stopBtn.disabled = (s.status !== 'running');
+          }
+          if (typeof s.message === 'string') msgEl.textContent = s.message || '—';
+          var pct = (typeof s.progress === 'number') ? s.progress : 0;
+          pctEl.textContent = pct + '%';
+          barEl.style.width = pct + '%';
+          if (typeof s.processed === 'number' && typeof s.total === 'number') {
+            counterEl.textContent = 'Обработано ' + s.processed + ' из ' + s.total;
+          }
+          if (typeof s.auto_update === 'boolean') {
+            autoText.textContent = s.auto_update ? 'вкл' : 'выкл';
+            autoPill.classList.toggle('bg-accent/20', s.auto_update);
+            autoPill.classList.toggle('text-accent', s.auto_update);
+            autoPill.classList.toggle('bg-surface2', !s.auto_update);
+            autoPill.classList.toggle('text-gray-500', !s.auto_update);
+          }
+          if (Array.isArray(s.logs)) renderLogs(s.logs);
+        }
+
+        // ----- WebSocket primary, AJAX fallback -----
+        var ws = null;
+        var pollTimer = null;
+        var fallbackActive = false;
+
+        function startPolling() {
+          if (pollTimer) return;
+          fallbackActive = true;
+          wsStateEl.textContent = '● опрос (AJAX)';
+          var tick = function () {
+            fetch('/admin/parser/status?after=' + lastLogId, { credentials: 'same-origin' })
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (data) { if (data) applyState(data); })
+              .catch(function () {});
+          };
+          tick();
+          pollTimer = setInterval(tick, 1500);
+        }
+        function stopPolling() {
+          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          fallbackActive = false;
+        }
+
+        function connectWS() {
+          try {
+            var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            ws = new WebSocket(proto + '://' + location.host + '/admin/parser/ws');
+          } catch (e) {
+            startPolling();
+            return;
+          }
+          ws.onopen = function () {
+            stopPolling();
+            wsStateEl.textContent = '● live';
+          };
+          ws.onmessage = function (ev) {
+            try { applyState(JSON.parse(ev.data)); } catch (e) {}
+          };
+          ws.onerror = function () {};
+          ws.onclose = function () {
+            wsStateEl.textContent = '○ отключено';
+            startPolling();
+            setTimeout(connectWS, 5000);
+          };
+        }
+        connectWS();
+
+        // ----- Buttons -----
+        runBtn.addEventListener('click', function () {
+          runBtn.disabled = true;
+          fetch('/admin/parser/run', { method: 'POST', credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              applyState(data.state);
+              if (!data.started) msgEl.textContent = 'Парсер уже запущен…';
+            })
+            .catch(function () {})
+            .then(function () {
+              if (fallbackActive) {
+                fetch('/admin/parser/status?after=' + lastLogId, { credentials: 'same-origin' })
+                  .then(function (r) { return r.ok ? r.json() : null; })
+                  .then(function (data) { if (data) applyState(data); });
+              }
+            });
+        });
+
+        stopBtn.addEventListener('click', function () {
+          stopBtn.disabled = true;
+          fetch('/admin/parser/stop', { method: 'POST', credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { applyState(data.state); })
+            .catch(function () {});
+        });
+
+        clearBtn.addEventListener('click', function () { logEl.innerHTML = ''; });
+
+        // Initial paint
+        applyState({{ parser_state|tojson }});
+      })();
+    </script>
+  {% endif %}
+{% endblock %}
